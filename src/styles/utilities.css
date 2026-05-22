@@ -1,0 +1,43 @@
+/* Utilidades personalizadas — sintaxis @utility de Tailwind CSS v4 */
+
+@utility glass {
+  border-width: 1px;
+  border-color: color-mix(in oklab, white 10%, transparent);
+  background-color: color-mix(in oklab, white 6%, transparent);
+  backdrop-filter: blur(24px);
+}
+
+@utility glass-strong {
+  border-width: 1px;
+  border-color: color-mix(in oklab, white 12%, transparent);
+  background-color: color-mix(in oklab, white 9%, transparent);
+  backdrop-filter: blur(40px);
+}
+
+@utility text-gradient-gold {
+  background-image: linear-gradient(
+    to right,
+    var(--color-amber-200),
+    var(--color-yellow-100),
+    var(--color-amber-300)
+  );
+  background-clip: text;
+  color: transparent;
+}
+
+@utility scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+@utility bg-mesh {
+  background-image:
+    radial-gradient(ellipse 80% 50% at 50% -20%, rgb(46 230 184 / 0.12), transparent),
+    radial-gradient(ellipse 60% 40% at 100% 0%, rgb(245 200 66 / 0.08), transparent),
+    radial-gradient(ellipse 50% 30% at 0% 100%, rgb(99 102 241 / 0.06), transparent);
+  background-attachment: fixed;
+}

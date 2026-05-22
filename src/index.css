@@ -1,0 +1,32 @@
+/* Tailwind CSS v4 — configuración CSS-first (sin tailwind.config.js) */
+@import 'tailwindcss';
+
+/* Escaneo de clases en el proyecto */
+@source '../index.html';
+@source './**/*.{ts,tsx}';
+
+/* Tema y utilidades del Mundial 2026 */
+@import './styles/theme.css';
+@import './styles/utilities.css';
+
+/* Tipografía */
+@import '@fontsource-variable/plus-jakarta-sans';
+
+@layer base {
+  html {
+    -webkit-tap-highlight-color: transparent;
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply m-0 min-h-dvh bg-surface font-sans text-ink antialiased bg-mesh;
+  }
+
+  #root {
+    @apply min-h-dvh;
+  }
+
+  ::selection {
+    @apply bg-mint/35 text-white;
+  }
+}

@@ -1,0 +1,21 @@
+/**
+ * Presets de clases Tailwind v4 reutilizables en componentes.
+ * Preferir estas constantes + cn() antes que CSS suelto.
+ */
+export const tw = {
+  glass: 'glass',
+  glassStrong: 'glass-strong',
+  textGradientGold: 'text-gradient-gold',
+  scrollbarHide: 'scrollbar-hide',
+
+  /** Contenedor app móvil */
+  appShell: 'mx-auto flex min-h-dvh max-w-[480px] flex-col',
+
+  /** Chip de filtro activo */
+  filterActive: 'bg-mint text-slate-900 shadow-md shadow-mint/25',
+  filterIdle: 'glass text-white/50 hover:text-white/80',
+
+  /** Botón CTA principal */
+  cta:
+    'flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-mint to-emerald-500 py-3 text-sm font-bold text-slate-900 shadow-lg shadow-mint/20 transition hover:brightness-110 active:scale-[0.98]',
+} as const

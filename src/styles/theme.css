@@ -1,0 +1,16 @@
+/* Tokens de diseño — Tailwind v4 genera utilities: bg-surface, text-mint, etc. */
+@theme {
+  --font-sans: 'Plus Jakarta Sans Variable', ui-sans-serif, system-ui, sans-serif;
+
+  --color-ink: #f8fafc;
+  --color-muted: #94a3b8;
+  --color-surface: #060d18;
+  --color-gold: #f5c842;
+  --color-mint: #2ee6b8;
+
+  --radius-card: 1rem;
+  --radius-pill: 9999px;
+
+  --shadow-glow-mint: 0 8px 32px -8px rgb(46 230 184 / 0.35);
+  --shadow-glow-gold: 0 8px 32px -8px rgb(245 200 66 / 0.25);
+}
