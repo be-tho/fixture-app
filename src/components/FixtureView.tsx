@@ -3,16 +3,19 @@ import { SearchX } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { useApp } from '../context/AppProvider'
 import { getArgentinaSchedule } from '../lib/argentinaTime'
+import { filterArgentinaMatches } from '../lib/matchSchedule'
 import type { ResolvedMatch } from '../types'
 import { STAGE_LABELS } from '../types'
 import { MatchCard } from './MatchCard'
 import { ScoreModal } from './ScoreModal'
+import { TodaySection } from './TodaySection'
 
 type FilterStage = 'all' | 'group' | 'knockout'
 
 interface FixtureViewProps {
   query: string
   stageFilter: FilterStage
+  argentinaOnly: boolean
 }
 
 function matchesFilter(
@@ -41,15 +44,27 @@ function matchesFilter(
   return true
 }
 
-export function FixtureView({ query, stageFilter }: FixtureViewProps) {
+export function FixtureView({
+  query,
+  stageFilter,
+  argentinaOnly,
+}: FixtureViewProps) {
   const { resolvedMatches, groupComplete } = useApp()
   const [editing, setEditing] = useState<ResolvedMatch | null>(null)
 
-  const filtered = useMemo(
+  const schedulePool = useMemo(
     () =>
-      resolvedMatches.filter((m) => matchesFilter(m, query, stageFilter)),
-    [resolvedMatches, query, stageFilter],
+      argentinaOnly
+        ? filterArgentinaMatches(resolvedMatches)
+        : resolvedMatches,
+    [resolvedMatches, argentinaOnly],
   )
+
+  const filtered = useMemo(() => {
+    let list = resolvedMatches
+    if (argentinaOnly) list = filterArgentinaMatches(list)
+    return list.filter((m) => matchesFilter(m, query, stageFilter))
+  }, [resolvedMatches, query, stageFilter, argentinaOnly])
 
   const byDate = useMemo(() => {
     const map = new Map<string, { label: string; matches: ResolvedMatch[] }>()
@@ -69,26 +84,43 @@ export function FixtureView({ query, stageFilter }: FixtureViewProps) {
     return [...map.entries()].sort(([a], [b]) => a.localeCompare(b))
   }, [filtered])
 
+  const showTodaySection = !query.trim() && stageFilter !== 'group'
+
   if (filtered.length === 0) {
     return (
-      <motion.div
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        className="flex flex-col items-center justify-center py-16 text-center"
-      >
-        <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-white/5">
-          <SearchX className="h-8 w-8 text-white/30" />
-        </div>
-        <p className="text-sm font-medium text-white/60">
-          No hay partidos con esa búsqueda
-        </p>
-        <p className="mt-1 text-xs text-white/35">Probá otro equipo o sede</p>
-      </motion.div>
+      <>
+        {showTodaySection && (
+          <TodaySection
+            matches={schedulePool}
+            onSelectMatch={setEditing}
+          />
+        )}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="flex flex-col items-center justify-center py-16 text-center"
+        >
+          <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-white/5">
+            <SearchX className="h-8 w-8 text-white/30" />
+          </div>
+          <p className="text-sm font-medium text-white/60">
+            {argentinaOnly
+              ? 'No hay partidos de Argentina con ese filtro'
+              : 'No hay partidos con esa búsqueda'}
+          </p>
+          <p className="mt-1 text-xs text-white/35">Probá otro equipo o sede</p>
+        </motion.div>
+        <ScoreModal match={editing} onClose={() => setEditing(null)} />
+      </>
     )
   }
 
   return (
     <>
+      {showTodaySection && (
+        <TodaySection matches={schedulePool} onSelectMatch={setEditing} />
+      )}
+
       {stageFilter !== 'group' && !groupComplete && (
         <p className="mb-4 rounded-xl bg-amber-500/10 px-3 py-2 text-center text-[11px] text-amber-200/90">
           Cargá todos los resultados de grupos para completar los cruces de

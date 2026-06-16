@@ -57,15 +57,17 @@ function ScoreStepper({
 }
 
 export function ScoreModal({ match, onClose }: ScoreModalProps) {
-  const { setScore, removeScore } = useApp()
+  const { setScore, removeScore, showToast } = useApp()
   const [home, setHome] = useState(0)
   const [away, setAway] = useState(0)
   const [saving, setSaving] = useState(false)
+  const [confirmDelete, setConfirmDelete] = useState(false)
 
   useEffect(() => {
     if (match) {
       setHome(match.homeScore ?? 0)
       setAway(match.awayScore ?? 0)
+      setConfirmDelete(false)
     }
   }, [match])
 
@@ -75,17 +77,34 @@ export function ScoreModal({ match, onClose }: ScoreModalProps) {
     setSaving(true)
     try {
       await setScore(match.id, home, away)
+      showToast('Resultado guardado')
       onClose()
+    } catch (e) {
+      showToast(
+        e instanceof Error ? e.message : 'No se pudo guardar el resultado',
+        'error',
+      )
     } finally {
       setSaving(false)
     }
   }
 
   const handleClear = async () => {
+    if (!confirmDelete) {
+      setConfirmDelete(true)
+      return
+    }
+
     setSaving(true)
     try {
       await removeScore(match.id)
+      showToast('Resultado borrado')
       onClose()
+    } catch (e) {
+      showToast(
+        e instanceof Error ? e.message : 'No se pudo borrar el resultado',
+        'error',
+      )
     } finally {
       setSaving(false)
     }
@@ -159,15 +178,36 @@ export function ScoreModal({ match, onClose }: ScoreModalProps) {
           </button>
 
           {match.hasResult && (
-            <button
-              type="button"
-              disabled={saving}
-              onClick={handleClear}
-              className="mt-3 flex w-full items-center justify-center gap-2 py-2 text-xs font-medium text-red-300/80"
-            >
-              <Trash2 className="h-3.5 w-3.5" />
-              Borrar resultado
-            </button>
+            <div className="mt-3 space-y-2">
+              {confirmDelete && (
+                <p className="text-center text-[11px] text-rose-200/90">
+                  ¿Borrar este resultado? Tocá de nuevo para confirmar.
+                </p>
+              )}
+              <button
+                type="button"
+                disabled={saving}
+                onClick={handleClear}
+                className={cn(
+                  'flex w-full items-center justify-center gap-2 rounded-xl py-2.5 text-xs font-semibold transition',
+                  confirmDelete
+                    ? 'bg-rose-500/20 text-rose-200 ring-1 ring-rose-400/30'
+                    : 'text-red-300/80',
+                )}
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+                {confirmDelete ? 'Confirmar borrado' : 'Borrar resultado'}
+              </button>
+              {confirmDelete && (
+                <button
+                  type="button"
+                  onClick={() => setConfirmDelete(false)}
+                  className="w-full py-1 text-[11px] text-white/45"
+                >
+                  Cancelar
+                </button>
+              )}
+            </div>
           )}
         </motion.div>
       </motion.div>

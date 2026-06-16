@@ -8,5 +8,5 @@ export const TOURNAMENT_INFO = {
   cities: 16,
   timezoneNote: 'Todos los horarios en hora argentina',
   sourceUrl:
-    'https://www.fifa.com/es/tournaments/mens/worldcup/canadamexicousa2026/articles/calendario-fixture-mundial-2026-partidos-fechas',
+    'https://www.fifa.com/es/tournaments/mens/worldcup/canadamexicousa2026/scores-fixtures?country=AR&wtw-filter=ALL',
 } as const

@@ -4,9 +4,11 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from 'react'
+import { ToastStack, type ToastItem, type ToastVariant } from '../components/Toast'
 import { resolveTournament } from '../lib/bracket'
 import {
   clearResult,
@@ -39,7 +41,8 @@ interface AppContextValue {
   setScore: (matchId: number, homeScore: number, awayScore: number) => Promise<void>
   removeScore: (matchId: number) => Promise<void>
   getStandings: (group: GroupLetter) => GroupStanding[]
-  refresh: () => Promise<void>
+  refresh: (options?: { silent?: boolean }) => Promise<void>
+  showToast: (message: string, variant?: ToastVariant) => void
 }
 
 const AppContext = createContext<AppContextValue | null>(null)
@@ -53,9 +56,24 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [results, setResults] = useState<ResultsMap>({})
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [toasts, setToasts] = useState<ToastItem[]>([])
+  const toastId = useRef(0)
 
-  const refresh = useCallback(async () => {
-    setLoading(true)
+  const showToast = useCallback(
+    (message: string, variant: ToastVariant = 'success') => {
+      const id = ++toastId.current
+      setToasts((prev) => [...prev, { id, message, variant }])
+      window.setTimeout(() => {
+        setToasts((prev) => prev.filter((t) => t.id !== id))
+      }, 3200)
+    },
+    [],
+  )
+
+  const refresh = useCallback(async (options?: { silent?: boolean }) => {
+    if (!options?.silent) {
+      setLoading(true)
+    }
     setError(null)
     try {
       const [tournament, loadedResults] = await Promise.all([
@@ -66,12 +84,22 @@ export function AppProvider({ children }: { children: ReactNode }) {
       setGroupTeams(tournament.groupTeams)
       setFlagCodes(tournament.flagCodes)
       setResults(loadedResults)
+      if (options?.silent) {
+        showToast('Fixture actualizado')
+      }
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Error al cargar datos')
+      const message = e instanceof Error ? e.message : 'Error al cargar datos'
+      if (options?.silent) {
+        showToast(message, 'error')
+      } else {
+        setError(message)
+      }
     } finally {
-      setLoading(false)
+      if (!options?.silent) {
+        setLoading(false)
+      }
     }
-  }, [])
+  }, [showToast])
 
   useEffect(() => {
     refresh()
@@ -128,6 +156,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       removeScore,
       getStandings: (group) => standings[group] ?? [],
       refresh,
+      showToast,
     }),
     [
       matches,
@@ -141,10 +170,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
       setScore,
       removeScore,
       refresh,
+      showToast,
     ],
   )
 
-  return <AppContext.Provider value={value}>{children}</AppContext.Provider>
+  return (
+    <AppContext.Provider value={value}>
+      {children}
+      <ToastStack toasts={toasts} />
+    </AppContext.Provider>
+  )
 }
 
 export function useApp() {

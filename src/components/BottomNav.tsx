@@ -1,12 +1,13 @@
 import { motion } from 'framer-motion'
-import { CalendarDays, Info, LayoutGrid } from 'lucide-react'
+import { CalendarDays, GitBranch, Info, LayoutGrid } from 'lucide-react'
 import { cn } from '../lib/cn'
 import { tw } from '../lib/tw'
 
-export type Tab = 'fixture' | 'groups' | 'info'
+export type Tab = 'fixture' | 'bracket' | 'groups' | 'info'
 
 const tabs: { id: Tab; label: string; icon: typeof CalendarDays }[] = [
   { id: 'fixture', label: 'Fixture', icon: CalendarDays },
+  { id: 'bracket', label: 'Cuadro', icon: GitBranch },
   { id: 'groups', label: 'Grupos', icon: LayoutGrid },
   { id: 'info', label: 'Info', icon: Info },
 ]
@@ -19,13 +20,13 @@ interface BottomNavProps {
 export function BottomNav({ active, onChange }: BottomNavProps) {
   return (
     <nav
-      className="fixed bottom-0 left-1/2 z-50 w-full max-w-[480px] -translate-x-1/2 px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2"
+      className="fixed bottom-0 left-1/2 z-50 w-full max-w-[480px] -translate-x-1/2 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2"
       aria-label="Navegación principal"
     >
       <div
         className={cn(
           tw.glassStrong,
-          'relative flex rounded-2xl p-1.5 shadow-2xl shadow-black/40',
+          'relative flex rounded-2xl p-1 shadow-2xl shadow-black/40',
         )}
       >
         {tabs.map(({ id, label, icon: Icon }) => {
@@ -37,7 +38,7 @@ export function BottomNav({ active, onChange }: BottomNavProps) {
               onClick={() => onChange(id)}
               aria-current={isActive ? 'page' : undefined}
               className={cn(
-                'relative flex flex-1 flex-col items-center gap-0.5 rounded-xl py-2.5 transition-colors',
+                'relative flex flex-1 flex-col items-center gap-0.5 rounded-xl py-2 transition-colors',
                 isActive ? 'text-mint' : 'text-white/40 hover:text-white/60',
               )}
             >
@@ -49,10 +50,10 @@ export function BottomNav({ active, onChange }: BottomNavProps) {
                 />
               )}
               <Icon
-                className="relative h-5 w-5"
+                className="relative h-[18px] w-[18px]"
                 strokeWidth={isActive ? 2.5 : 2}
               />
-              <span className="relative text-[10px] font-semibold">{label}</span>
+              <span className="relative text-[9px] font-semibold">{label}</span>
             </button>
           )
         })}
