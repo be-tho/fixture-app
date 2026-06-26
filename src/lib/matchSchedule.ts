@@ -47,6 +47,7 @@ export function formatCountdown(ms: number): string {
 export interface ScheduledMatch extends ResolvedMatch {
   kickoffMs: number | null
   dateKey: string
+  dateLabel: string
   timeDisplay: string | null
 }
 
@@ -56,6 +57,7 @@ function toScheduledMatch(match: ResolvedMatch): ScheduledMatch {
     ...match,
     kickoffMs: getMatchKickoffMs(match),
     dateKey: ar.dateKey,
+    dateLabel: ar.dateLabel,
     timeDisplay: ar.timeDisplay,
   }
 }

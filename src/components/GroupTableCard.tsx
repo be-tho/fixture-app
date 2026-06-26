@@ -1,6 +1,5 @@
 import type { GroupLetter, GroupStanding } from '../types'
 import { cn } from '../lib/cn'
-import type { FormResult } from '../lib/groupForm'
 import { GROUP_GRADIENT, GROUP_RING } from '../lib/groupColors'
 import { tw } from '../lib/tw'
 import { GroupStandings } from './GroupStandings'
@@ -8,7 +7,6 @@ import { GroupStandings } from './GroupStandings'
 interface GroupTableCardProps {
   group: GroupLetter
   rows: GroupStanding[]
-  forms: Record<string, FormResult[]>
   thirdRanks: Record<string, number>
   selected?: boolean
   onSelect?: () => void
@@ -30,7 +28,6 @@ function qualificationNote(rows: GroupStanding[], thirdRanks: Record<string, num
 export function GroupTableCard({
   group,
   rows,
-  forms,
   thirdRanks,
   selected,
   onSelect,
@@ -65,12 +62,7 @@ export function GroupTableCard({
         )}
       </div>
 
-      <GroupStandings
-        rows={rows}
-        forms={forms}
-        thirdRanks={thirdRanks}
-        compact
-      />
+      <GroupStandings rows={rows} thirdRanks={thirdRanks} compact />
 
       <p className="border-t border-white/5 px-3 py-2 text-[9px] leading-snug text-white/35">
         {qualificationNote(rows, thirdRanks)}

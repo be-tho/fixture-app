@@ -8,6 +8,7 @@ import {
 } from '../lib/matchSchedule'
 import { cn } from '../lib/cn'
 import { tw } from '../lib/tw'
+import type { ScheduledMatch } from '../lib/matchSchedule'
 import type { ResolvedMatch } from '../types'
 import { TeamFlag } from './TeamFlag'
 
@@ -20,7 +21,7 @@ function MiniMatchRow({
   match,
   onSelect,
 }: {
-  match: ResolvedMatch
+  match: ScheduledMatch
   onSelect: () => void
 }) {
   return (
@@ -29,6 +30,18 @@ function MiniMatchRow({
       onClick={onSelect}
       className="flex w-full items-center gap-2 rounded-xl bg-white/[0.04] px-2.5 py-2 text-left transition hover:bg-white/[0.08] active:scale-[0.99]"
     >
+      <div className="flex w-[4.5rem] shrink-0 flex-col leading-tight">
+        {match.timeDisplay ? (
+          <span className="text-[11px] font-bold tabular-nums text-mint">
+            {match.timeDisplay}
+          </span>
+        ) : (
+          <span className="text-[10px] font-medium text-white/35">TBC</span>
+        )}
+        <span className="truncate text-[9px] font-medium capitalize text-white/45">
+          {match.dateLabel}
+        </span>
+      </div>
       <TeamFlag name={match.homeDisplay} size="sm" />
       <span className="min-w-0 flex-1 truncate text-[11px] font-semibold text-white/85">
         {match.homeDisplay}
@@ -87,7 +100,29 @@ export function TodaySection({ matches, onSelectMatch }: TodaySectionProps) {
             onClick={() => onSelectMatch(next)}
             className="w-full rounded-xl bg-gradient-to-br from-amber-500/15 to-orange-500/10 p-3 text-left ring-1 ring-amber-400/20 transition active:scale-[0.99]"
           >
-            <div className="mb-2 flex items-center justify-between gap-2">
+            <div className="mb-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px]">
+              <span className="font-semibold capitalize text-white/70">
+                {next.dateLabel}
+              </span>
+              {next.timeDisplay && (
+                <>
+                  <span className="text-white/25">·</span>
+                  <span className="font-bold tabular-nums text-amber-200/90">
+                    {next.timeDisplay}
+                  </span>
+                </>
+              )}
+              {nextCountdown && (
+                <>
+                  <span className="text-white/25">·</span>
+                  <span className="flex items-center gap-1 font-bold text-mint">
+                    <Clock className="h-3.5 w-3.5" />
+                    {nextCountdown}
+                  </span>
+                </>
+              )}
+            </div>
+            <div className="flex items-center justify-between gap-2">
               <div className="flex min-w-0 flex-1 items-center gap-2">
                 <TeamFlag name={next.homeDisplay} size="sm" />
                 <span className="truncate text-sm font-bold text-white">
@@ -101,19 +136,6 @@ export function TodaySection({ matches, onSelectMatch }: TodaySectionProps) {
                   {next.awayDisplay}
                 </span>
               </div>
-            </div>
-            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px]">
-              {next.timeDisplay && (
-                <span className="font-semibold text-white/70">
-                  {next.timeDisplay}
-                </span>
-              )}
-              {nextCountdown && (
-                <span className="flex items-center gap-1 font-bold text-mint">
-                  <Clock className="h-3.5 w-3.5" />
-                  {nextCountdown}
-                </span>
-              )}
             </div>
           </button>
         </div>

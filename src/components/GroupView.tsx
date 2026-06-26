@@ -2,7 +2,6 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { useMemo, useState } from 'react'
 import { useApp } from '../context/AppProvider'
 import { cn } from '../lib/cn'
-import { getGroupForms, type FormResult } from '../lib/groupForm'
 import { GROUP_GRADIENT, GROUP_RING } from '../lib/groupColors'
 import { tw } from '../lib/tw'
 import type { GroupLetter, ResolvedMatch } from '../types'
@@ -28,9 +27,6 @@ export function GroupView({
     resolvedMatches,
     getStandings,
     thirdPlaceCandidates,
-    matches,
-    results,
-    groupTeams,
   } = useApp()
   const [editing, setEditing] = useState<ResolvedMatch | null>(null)
 
@@ -41,14 +37,6 @@ export function GroupView({
       ),
     [thirdPlaceCandidates],
   )
-
-  const groupForms = useMemo(() => {
-    const map = {} as Record<GroupLetter, Record<string, FormResult[]>>
-    for (const g of GROUPS) {
-      map[g] = getGroupForms(groupTeams[g] ?? [], g, matches, results)
-    }
-    return map
-  }, [groupTeams, matches, results])
 
   const matchesForGroup = useMemo(
     () => resolvedMatches.filter((m) => m.group === selectedGroup),
@@ -72,12 +60,6 @@ export function GroupView({
           <span className="flex items-center gap-1">
             <span className="h-2 w-2 rounded-sm bg-amber-400/40" />
             3º en zona (top 8 terceros)
-          </span>
-          <span className="flex items-center gap-1">
-            <span className="inline-flex h-4 w-4 items-center justify-center rounded bg-emerald-500/25 text-[7px] font-black text-emerald-200">
-              V
-            </span>
-            Últimos resultados
           </span>
         </div>
         <div
@@ -120,7 +102,6 @@ export function GroupView({
             key={g}
             group={g}
             rows={getStandings(g)}
-            forms={groupForms[g]}
             thirdRanks={thirdRanks}
             selected={selectedGroup === g}
             onSelect={() => onSelectGroup(g)}

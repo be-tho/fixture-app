@@ -1,12 +1,9 @@
 import type { GroupStanding } from '../types'
 import { cn } from '../lib/cn'
-import type { FormResult } from '../lib/groupForm'
-import { FormBadges } from './FormBadges'
 import { TeamFlag } from './TeamFlag'
 
 interface GroupStandingsProps {
   rows: GroupStanding[]
-  forms?: Record<string, FormResult[]>
   thirdRanks?: Record<string, number>
   /** Tabla más densa para grillas de 12 grupos */
   compact?: boolean
@@ -35,7 +32,6 @@ function rowStatus(
 
 export function GroupStandings({
   rows,
-  forms = {},
   thirdRanks = {},
   compact = false,
 }: GroupStandingsProps) {
@@ -51,8 +47,7 @@ export function GroupStandings({
             <th className={cn(cell, 'text-center font-semibold')}>Pts</th>
             <th className={cn(cell, 'text-center font-semibold')}>J</th>
             <th className={cn(cell, 'text-center font-semibold')}>Gol</th>
-            <th className={cn(cell, 'text-center font-semibold')}>G-E-P</th>
-            <th className={cn(cell, 'pr-2 text-center font-semibold')}>Últ.</th>
+            <th className={cn(cell, 'pr-2 text-center font-semibold')}>G-E-P</th>
           </tr>
         </thead>
         <tbody>
@@ -122,11 +117,8 @@ export function GroupStandings({
                     {row.goalDifference}
                   </span>
                 </td>
-                <td className={cn(cell, 'text-center tabular-nums text-white/50')}>
+                <td className={cn(cell, 'pr-2 text-center tabular-nums text-white/50')}>
                   {row.won}-{row.drawn}-{row.lost}
-                </td>
-                <td className={cn(cell, 'pr-2')}>
-                  <FormBadges form={forms[row.team] ?? []} />
                 </td>
               </tr>
             )
