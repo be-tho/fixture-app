@@ -1,8 +1,11 @@
 import {
   computeGroupStandings,
   getRankedThirdPlaces,
-  type RankedThird,
 } from './standings'
+import {
+  assignThirdPlaces,
+  THIRD_PLACE_SLOTS,
+} from './thirdPlaces'
 import type { GroupLetter, Match, ResolvedMatch, ResultsMap } from '../types'
 
 type Slot =
@@ -12,17 +15,6 @@ type Slot =
   | { kind: 'third'; groups: GroupLetter[] }
   | { kind: 'winner'; matchId: number }
   | { kind: 'loser'; matchId: number }
-
-const THIRD_SLOTS: { matchId: number; groups: GroupLetter[] }[] = [
-  { matchId: 74, groups: ['A', 'B', 'C', 'D', 'F'] },
-  { matchId: 77, groups: ['C', 'D', 'F', 'G', 'H'] },
-  { matchId: 79, groups: ['C', 'E', 'F', 'H', 'I'] },
-  { matchId: 80, groups: ['E', 'H', 'I', 'J', 'K'] },
-  { matchId: 81, groups: ['B', 'E', 'F', 'I', 'J'] },
-  { matchId: 82, groups: ['A', 'E', 'H', 'I', 'J'] },
-  { matchId: 85, groups: ['E', 'F', 'G', 'I', 'J'] },
-  { matchId: 87, groups: ['D', 'E', 'I', 'J', 'L'] },
-]
 
 function parseSlot(name: string): Slot {
   const first = name.match(/^1º Grupo ([A-L])$/i)
@@ -48,23 +40,6 @@ function parseSlot(name: string): Slot {
   return { kind: 'team', name }
 }
 
-function assignThirdPlaces(ranked: RankedThird[]): Map<number, string> {
-  const assignedGroups = new Set<GroupLetter>()
-  const byMatch = new Map<number, string>()
-
-  for (const { matchId, groups } of THIRD_SLOTS) {
-    const pick = ranked.find(
-      (t) => groups.includes(t.group) && !assignedGroups.has(t.group),
-    )
-    if (pick) {
-      assignedGroups.add(pick.group)
-      byMatch.set(matchId, pick.team)
-    }
-  }
-
-  return byMatch
-}
-
 export function resolveTournament(
   matches: Match[],
   groupTeams: Record<GroupLetter, string[]>,
@@ -79,7 +54,7 @@ export function resolveTournament(
   const rankedThirds = getRankedThirdPlaces(tables)
   const thirdAssignments = assignThirdPlaces(rankedThirds)
 
-  for (const slot of THIRD_SLOTS) {
+  for (const slot of THIRD_PLACE_SLOTS) {
     const team = thirdAssignments.get(slot.matchId)
     if (team) thirdByMatch.set(slot.matchId, team)
   }

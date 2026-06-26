@@ -1,62 +1,138 @@
 import type { GroupStanding } from '../types'
 import { cn } from '../lib/cn'
+import type { FormResult } from '../lib/groupForm'
+import { FormBadges } from './FormBadges'
 import { TeamFlag } from './TeamFlag'
 
 interface GroupStandingsProps {
   rows: GroupStanding[]
+  forms?: Record<string, FormResult[]>
+  thirdRanks?: Record<string, number>
+  /** Tabla más densa para grillas de 12 grupos */
+  compact?: boolean
 }
 
-export function GroupStandings({ rows }: GroupStandingsProps) {
+function rowStatus(
+  row: GroupStanding,
+  thirdRanks: Record<string, number>,
+): { label: string; className: string } | null {
+  if (row.played === 0) return null
+  if (row.position === 1) {
+    return { label: '1°', className: 'text-mint/70' }
+  }
+  if (row.position === 2) {
+    return { label: '2°', className: 'text-mint/60' }
+  }
+  if (row.position === 3) {
+    const rank = thirdRanks[row.team]
+    if (rank != null && rank <= 8) {
+      return { label: `3° (#${rank})`, className: 'text-amber-200/90' }
+    }
+    return { label: '3°', className: 'text-amber-200/50' }
+  }
+  return null
+}
+
+export function GroupStandings({
+  rows,
+  forms = {},
+  thirdRanks = {},
+  compact = false,
+}: GroupStandingsProps) {
+  const cell = compact ? 'px-1 py-1.5' : 'px-1.5 py-2'
+
   return (
-    <div className="overflow-hidden rounded-xl bg-black/20">
+    <div className="overflow-x-auto">
       <table className="w-full text-left text-[10px]">
         <thead>
-          <tr className="border-b border-white/10 text-white/40">
-            <th className="px-2 py-1.5 font-semibold">#</th>
-            <th className="px-1 py-1.5 font-semibold">Equipo</th>
-            <th className="px-1 py-1.5 text-center font-semibold">PJ</th>
-            <th className="px-1 py-1.5 text-center font-semibold">DG</th>
-            <th className="px-2 py-1.5 text-center font-semibold">Pts</th>
+          <tr className="border-b border-white/10 text-[9px] text-white/40">
+            <th className={cn(cell, 'w-6 pl-2 font-semibold')}>#</th>
+            <th className={cn(cell, 'min-w-[88px] font-semibold')}>Equipo</th>
+            <th className={cn(cell, 'text-center font-semibold')}>Pts</th>
+            <th className={cn(cell, 'text-center font-semibold')}>J</th>
+            <th className={cn(cell, 'text-center font-semibold')}>Gol</th>
+            <th className={cn(cell, 'text-center font-semibold')}>G-E-P</th>
+            <th className={cn(cell, 'pr-2 text-center font-semibold')}>Últ.</th>
           </tr>
         </thead>
         <tbody>
-          {rows.map((row) => (
-            <tr
-              key={row.team}
-              className={cn(
-                'border-b border-white/5 last:border-0',
-                row.position <= 2 && 'bg-mint/5',
-                row.position === 3 && 'bg-amber-500/5',
-              )}
-            >
-              <td className="px-2 py-1.5 font-bold text-white/50">
-                {row.position}
-              </td>
-              <td className="px-1 py-1">
-                <div className="flex items-center gap-1.5">
-                  <TeamFlag name={row.team} size="sm" />
-                  <span className="truncate font-semibold text-white/90">
-                    {row.team}
+          {rows.map((row) => {
+            const status = rowStatus(row, thirdRanks)
+            const qualifiesDirect = row.position <= 2 && row.played > 0
+            const thirdInZone =
+              row.position === 3 &&
+              row.played > 0 &&
+              thirdRanks[row.team] != null &&
+              thirdRanks[row.team] <= 8
+
+            return (
+              <tr
+                key={row.team}
+                className={cn(
+                  'border-b border-white/5 last:border-0',
+                  qualifiesDirect && 'bg-mint/[0.06]',
+                  thirdInZone && 'bg-amber-500/[0.08]',
+                  row.position === 4 && row.played > 0 && 'opacity-80',
+                )}
+              >
+                <td className={cn(cell, 'pl-2 font-bold text-white/50')}>
+                  {row.position}
+                </td>
+                <td className={cell}>
+                  <div className="flex min-w-0 items-center gap-1.5">
+                    <TeamFlag name={row.team} size="sm" />
+                    <div className="min-w-0">
+                      <span className="block truncate font-semibold leading-tight text-white/90">
+                        {row.team}
+                      </span>
+                      {status && (
+                        <span className={cn('text-[8px] font-bold', status.className)}>
+                          {status.label}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </td>
+                <td
+                  className={cn(
+                    cell,
+                    'text-center text-xs font-black tabular-nums text-mint/90',
+                  )}
+                >
+                  {row.points}
+                </td>
+                <td className={cn(cell, 'text-center tabular-nums text-white/60')}>
+                  {row.played}
+                </td>
+                <td className={cn(cell, 'text-center tabular-nums text-white/60')}>
+                  <span>
+                    {row.goalsFor}:{row.goalsAgainst}
                   </span>
-                </div>
-              </td>
-              <td className="px-1 py-1.5 text-center text-white/60">
-                {row.played}
-              </td>
-              <td className="px-1 py-1.5 text-center text-white/60">
-                {row.goalDifference > 0 ? '+' : ''}
-                {row.goalDifference}
-              </td>
-              <td className="px-2 py-1.5 text-center font-bold text-mint/90">
-                {row.points}
-              </td>
-            </tr>
-          ))}
+                  <span
+                    className={cn(
+                      'ml-0.5 font-semibold',
+                      row.goalDifference > 0
+                        ? 'text-mint/75'
+                        : row.goalDifference < 0
+                          ? 'text-rose-300/70'
+                          : 'text-white/35',
+                    )}
+                  >
+                    {row.goalDifference > 0 ? '+' : ''}
+                    {row.goalDifference}
+                  </span>
+                </td>
+                <td className={cn(cell, 'text-center tabular-nums text-white/50')}>
+                  {row.won}-{row.drawn}-{row.lost}
+                </td>
+                <td className={cn(cell, 'pr-2')}>
+                  <FormBadges form={forms[row.team] ?? []} />
+                </td>
+              </tr>
+            )
+          })}
         </tbody>
       </table>
-      <p className="px-2 py-1.5 text-[9px] text-white/30">
-        Top 2 clasifican · 3º puede avanzar (mejores 8 terceros)
-      </p>
     </div>
   )
 }

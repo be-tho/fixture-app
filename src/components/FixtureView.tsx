@@ -138,7 +138,7 @@ export function FixtureView({
               </h3>
               <div className="h-px flex-1 bg-gradient-to-r from-transparent via-white/15 to-transparent" />
             </div>
-            <div className="space-y-3">
+            <div className="space-y-3 md:grid md:grid-cols-2 md:gap-4 md:space-y-0 lg:grid-cols-2 xl:grid-cols-3">
               {matches.map((m, i) => (
                 <MatchCard
                   key={m.id}

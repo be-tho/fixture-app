@@ -2,38 +2,89 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { useMemo, useState } from 'react'
 import { useApp } from '../context/AppProvider'
 import { cn } from '../lib/cn'
+import { getGroupForms, type FormResult } from '../lib/groupForm'
 import { GROUP_GRADIENT, GROUP_RING } from '../lib/groupColors'
 import { tw } from '../lib/tw'
 import type { GroupLetter, ResolvedMatch } from '../types'
-import { GroupStandings } from './GroupStandings'
+import { GroupTableCard } from './GroupTableCard'
 import { MatchCard } from './MatchCard'
 import { ScoreModal } from './ScoreModal'
+import { ThirdPlacesMiniTable } from './ThirdPlacesMiniTable'
 
 const GROUPS = 'ABCDEFGHIJKL'.split('') as GroupLetter[]
 
 interface GroupViewProps {
   selectedGroup: GroupLetter
   onSelectGroup: (g: GroupLetter) => void
+  onOpenThirds?: () => void
 }
 
-export function GroupView({ selectedGroup, onSelectGroup }: GroupViewProps) {
-  const { resolvedMatches, getStandings } = useApp()
+export function GroupView({
+  selectedGroup,
+  onSelectGroup,
+  onOpenThirds,
+}: GroupViewProps) {
+  const {
+    resolvedMatches,
+    getStandings,
+    thirdPlaceCandidates,
+    matches,
+    results,
+    groupTeams,
+  } = useApp()
   const [editing, setEditing] = useState<ResolvedMatch | null>(null)
 
-  const matches = useMemo(
+  const thirdRanks = useMemo(
+    () =>
+      Object.fromEntries(
+        thirdPlaceCandidates.map((c) => [c.team, c.thirdRank]),
+      ),
+    [thirdPlaceCandidates],
+  )
+
+  const groupForms = useMemo(() => {
+    const map = {} as Record<GroupLetter, Record<string, FormResult[]>>
+    for (const g of GROUPS) {
+      map[g] = getGroupForms(groupTeams[g] ?? [], g, matches, results)
+    }
+    return map
+  }, [groupTeams, matches, results])
+
+  const matchesForGroup = useMemo(
     () => resolvedMatches.filter((m) => m.group === selectedGroup),
     [resolvedMatches, selectedGroup],
   )
 
-  const standings = getStandings(selectedGroup)
+  const playedInGroup = useMemo(() => {
+    const rows = getStandings(selectedGroup)
+    return rows.reduce((s, r) => s + r.played, 0)
+  }, [getStandings, selectedGroup])
 
   return (
-    <div className="space-y-5">
-      <div role="tablist" aria-label="Grupos" className="space-y-2">
-        <p className="text-center text-[10px] font-medium text-white/35">
-          Elegí un grupo (A–L)
-        </p>
-        <div className="grid grid-cols-6 gap-1.5">
+    <div className="space-y-6">
+      {/* Selector rápido */}
+      <div className="sticky top-0 z-10 -mx-1 space-y-2 bg-surface/80 px-1 py-2 backdrop-blur-md md:static md:bg-transparent md:p-0">
+        <div className="flex flex-wrap gap-3 text-[9px] text-white/35">
+          <span className="flex items-center gap-1">
+            <span className="h-2 w-2 rounded-sm bg-mint/40" />
+            Top 2 → 16avos
+          </span>
+          <span className="flex items-center gap-1">
+            <span className="h-2 w-2 rounded-sm bg-amber-400/40" />
+            3º en zona (top 8 terceros)
+          </span>
+          <span className="flex items-center gap-1">
+            <span className="inline-flex h-4 w-4 items-center justify-center rounded bg-emerald-500/25 text-[7px] font-black text-emerald-200">
+              V
+            </span>
+            Últimos resultados
+          </span>
+        </div>
+        <div
+          className={cn(tw.scrollbarHide, 'flex gap-1.5 overflow-x-auto pb-1 md:flex-wrap md:overflow-visible')}
+          role="tablist"
+          aria-label="Grupos"
+        >
           {GROUPS.map((g) => {
             const active = selectedGroup === g
             return (
@@ -42,21 +93,17 @@ export function GroupView({ selectedGroup, onSelectGroup }: GroupViewProps) {
                 type="button"
                 role="tab"
                 aria-selected={active}
-                aria-label={`Grupo ${g}`}
                 onClick={() => onSelectGroup(g)}
                 className={cn(
-                  'flex aspect-square w-full items-center justify-center rounded-xl text-sm font-black transition-all active:scale-95',
+                  'shrink-0 rounded-lg px-3 py-1.5 text-xs font-black transition-all',
                   active
                     ? cn(
-                        'bg-gradient-to-br text-white shadow-lg',
+                        'bg-gradient-to-br text-white shadow-md',
                         GROUP_GRADIENT[g],
                         GROUP_RING[g],
                         'ring-2',
                       )
-                    : cn(
-                        tw.glass,
-                        'text-white/50 hover:bg-white/10 hover:text-white/80',
-                      ),
+                    : cn(tw.glass, 'text-white/45 hover:text-white/75'),
                 )}
               >
                 {g}
@@ -66,32 +113,46 @@ export function GroupView({ selectedGroup, onSelectGroup }: GroupViewProps) {
         </div>
       </div>
 
+      {/* Todas las tablas — estilo ELNINE */}
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+        {GROUPS.map((g) => (
+          <GroupTableCard
+            key={g}
+            group={g}
+            rows={getStandings(g)}
+            forms={groupForms[g]}
+            thirdRanks={thirdRanks}
+            selected={selectedGroup === g}
+            onSelect={() => onSelectGroup(g)}
+          />
+        ))}
+      </div>
+
+      {/* Tabla de terceros resumida */}
+      <ThirdPlacesMiniTable onOpenFull={onOpenThirds} />
+
+      {/* Partidos del grupo seleccionado */}
       <AnimatePresence mode="wait">
         <motion.section
           key={selectedGroup}
-          initial={{ opacity: 0, x: 12 }}
-          animate={{ opacity: 1, x: 0 }}
-          exit={{ opacity: 0, x: -12 }}
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -8 }}
           transition={{ duration: 0.2 }}
+          className="space-y-3"
         >
-          <div
-            className={cn(
-              tw.glassStrong,
-              'mb-5 overflow-hidden rounded-2xl p-4 ring-1',
-              GROUP_RING[selectedGroup],
-            )}
-          >
-            <p className="mb-3 text-[10px] font-bold uppercase tracking-[0.2em] text-white/40">
-              Tabla · Grupo {selectedGroup}
-            </p>
-            <GroupStandings rows={standings} />
+          <div className="flex items-end justify-between gap-2">
+            <div>
+              <h3 className="text-xs font-bold uppercase tracking-wider text-white/50">
+                Partidos · Grupo {selectedGroup}
+              </h3>
+              <p className="mt-0.5 text-[10px] text-white/35">
+                {matchesForGroup.length} partidos · {playedInGroup} PJ registrados en la tabla
+              </p>
+            </div>
           </div>
-
-          <h3 className="mb-3 text-[10px] font-bold uppercase tracking-[0.2em] text-white/40">
-            Partidos · {matches.length}
-          </h3>
-          <div className="space-y-3">
-            {matches.map((m, i) => (
+          <div className="space-y-3 md:grid md:grid-cols-2 md:gap-4 md:space-y-0 lg:grid-cols-2">
+            {matchesForGroup.map((m, i) => (
               <MatchCard
                 key={m.id}
                 match={m}

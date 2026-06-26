@@ -11,11 +11,20 @@ const stats = [
   { icon: MapPin, value: TOURNAMENT_INFO.cities, label: 'sedes' },
 ] as const
 
-export function Header() {
+interface HeaderProps {
+  className?: string
+}
+
+export function Header({ className }: HeaderProps) {
   const { loading } = useApp()
 
   return (
-    <header className="relative overflow-hidden px-4 pb-2 pt-[max(1rem,env(safe-area-inset-top))]">
+    <header
+      className={cn(
+        'relative overflow-hidden px-4 pb-2 pt-[max(1rem,env(safe-area-inset-top))]',
+        className,
+      )}
+    >
       <div
         className="pointer-events-none absolute -right-8 -top-8 h-40 w-40 rounded-full bg-mint/20 blur-3xl"
         aria-hidden

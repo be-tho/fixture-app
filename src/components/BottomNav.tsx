@@ -1,14 +1,15 @@
 import { motion } from 'framer-motion'
-import { CalendarDays, GitBranch, Info, LayoutGrid } from 'lucide-react'
+import { CalendarDays, GitBranch, Info, LayoutGrid, TrendingUp } from 'lucide-react'
 import { cn } from '../lib/cn'
 import { tw } from '../lib/tw'
 
-export type Tab = 'fixture' | 'bracket' | 'groups' | 'info'
+export type Tab = 'fixture' | 'bracket' | 'groups' | 'thirds' | 'info'
 
 const tabs: { id: Tab; label: string; icon: typeof CalendarDays }[] = [
   { id: 'fixture', label: 'Fixture', icon: CalendarDays },
   { id: 'bracket', label: 'Cuadro', icon: GitBranch },
   { id: 'groups', label: 'Grupos', icon: LayoutGrid },
+  { id: 'thirds', label: '3º', icon: TrendingUp },
   { id: 'info', label: 'Info', icon: Info },
 ]
 
@@ -20,7 +21,7 @@ interface BottomNavProps {
 export function BottomNav({ active, onChange }: BottomNavProps) {
   return (
     <nav
-      className="fixed bottom-0 left-1/2 z-50 w-full max-w-[480px] -translate-x-1/2 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2"
+      className="fixed bottom-0 left-1/2 z-50 w-full max-w-[480px] -translate-x-1/2 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2 md:hidden"
       aria-label="Navegación principal"
     >
       <div

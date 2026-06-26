@@ -29,7 +29,7 @@ function BracketMatchNode({
       onClick={onEdit}
       className={cn(
         tw.glass,
-        'relative w-[148px] shrink-0 rounded-xl p-2.5 text-left transition hover:bg-white/[0.08] active:scale-[0.98]',
+        'relative w-[148px] shrink-0 rounded-xl p-2.5 text-left transition hover:bg-white/[0.08] active:scale-[0.98] md:w-[156px] lg:w-[168px]',
         match.hasResult && 'ring-1 ring-mint/25',
         isFinal && 'ring-1 ring-amber-400/30',
         argentina && 'ring-1 ring-sky-400/25',
@@ -106,12 +106,19 @@ export function BracketView() {
         </p>
       )}
 
-      <p className="text-center text-[10px] text-white/35">
-        Deslizá horizontalmente · Tocá un partido para cargar resultado
+      <p className="text-center text-[10px] text-white/35 md:text-xs">
+        <span className="md:hidden">Deslizá horizontalmente · </span>
+        <span className="hidden md:inline">Clic en un partido para cargar resultado</span>
+        <span className="md:hidden">Tocá un partido para cargar resultado</span>
       </p>
 
-      <div className={cn(tw.scrollbarHide, 'overflow-x-auto pb-2')}>
-        <div className="flex min-w-max items-stretch gap-0 px-1">
+      <div
+        className={cn(
+          tw.scrollbarHide,
+          'overflow-x-auto pb-2 md:flex md:justify-center md:overflow-x-visible',
+        )}
+      >
+        <div className="flex min-w-max items-stretch gap-0 px-1 md:min-w-0 md:gap-1">
           {BRACKET_ROUNDS.map((round, roundIndex) => {
             const roundMatches = round.matchIds
               .map((id) => byId.get(id))
@@ -126,7 +133,7 @@ export function BracketView() {
                   />
                 )}
 
-                <div className="flex w-[168px] shrink-0 flex-col">
+                <div className="flex w-[168px] shrink-0 flex-col md:w-[176px] lg:w-[188px]">
                   <div className="sticky top-0 z-10 mb-3 rounded-lg bg-surface/80 px-2 py-1.5 text-center backdrop-blur-sm">
                     <p className="text-[10px] font-black uppercase tracking-wider text-mint/90">
                       {round.shortLabel}

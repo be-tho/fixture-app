@@ -18,7 +18,7 @@ interface ToastStackProps {
 export function ToastStack({ toasts }: ToastStackProps) {
   return (
     <div
-      className="pointer-events-none fixed left-1/2 top-[max(0.75rem,env(safe-area-inset-top))] z-[200] flex w-full max-w-[480px] -translate-x-1/2 flex-col gap-2 px-4"
+      className="pointer-events-none fixed left-1/2 top-[max(0.75rem,env(safe-area-inset-top))] z-[200] flex w-full max-w-[480px] -translate-x-1/2 flex-col gap-2 px-4 md:left-auto md:right-6 md:top-6 md:max-w-sm md:translate-x-0 md:px-0"
       aria-live="polite"
     >
       <AnimatePresence mode="popLayout">

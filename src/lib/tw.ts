@@ -8,8 +8,15 @@ export const tw = {
   textGradientGold: 'text-gradient-gold',
   scrollbarHide: 'scrollbar-hide',
 
-  /** Contenedor app móvil */
-  appShell: 'mx-auto flex min-h-dvh max-w-[480px] flex-col',
+  /** Contenedor raíz — móvil 480px, desktop full width */
+  appShell: 'mx-auto flex min-h-dvh w-full max-w-[480px] flex-col md:max-w-none',
+
+  /** Max width para overlays (nav, modal, toast) */
+  overlayMax: 'max-w-[480px] md:max-w-none',
+
+  /** Padding del main content */
+  main:
+    'px-4 pb-[calc(5.5rem+env(safe-area-inset-bottom))] pt-2 md:px-6 md:pb-6 lg:px-8',
 
   /** Chip de filtro activo */
   filterActive: 'bg-mint text-slate-900 shadow-md shadow-mint/25',

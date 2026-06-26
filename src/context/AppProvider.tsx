@@ -19,6 +19,11 @@ import {
   computeGroupStandings,
   isGroupStageComplete,
 } from '../lib/standings'
+import {
+  computeThirdPlaceRace,
+  type ThirdPlaceCandidate,
+  type ThirdPlaceSlotAssignment,
+} from '../lib/thirdPlaces'
 import { fetchTournament } from '../lib/tournamentDb'
 import type {
   GroupLetter,
@@ -38,6 +43,8 @@ interface AppContextValue {
   loading: boolean
   error: string | null
   groupComplete: boolean
+  thirdPlaceCandidates: ThirdPlaceCandidate[]
+  thirdPlaceSlots: ThirdPlaceSlotAssignment[]
   setScore: (matchId: number, homeScore: number, awayScore: number) => Promise<void>
   removeScore: (matchId: number) => Promise<void>
   getStandings: (group: GroupLetter) => GroupStanding[]
@@ -124,6 +131,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
     [matches, groupTeams, results],
   )
 
+  const thirdPlaceRace = useMemo(
+    () =>
+      matches.length > 0
+        ? computeThirdPlaceRace(standings, matches, results)
+        : { candidates: [], slots: [] },
+    [standings, matches, results],
+  )
+
   const setScore = useCallback(
     async (matchId: number, homeScore: number, awayScore: number) => {
       const entry: MatchResult = { matchId, homeScore, awayScore }
@@ -152,6 +167,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
       loading,
       error,
       groupComplete: isGroupStageComplete(matches, results),
+      thirdPlaceCandidates: thirdPlaceRace.candidates,
+      thirdPlaceSlots: thirdPlaceRace.slots,
       setScore,
       removeScore,
       getStandings: (group) => standings[group] ?? [],
@@ -167,6 +184,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       loading,
       error,
       standings,
+      thirdPlaceRace,
       setScore,
       removeScore,
       refresh,

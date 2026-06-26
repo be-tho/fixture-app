@@ -41,7 +41,7 @@ const cards = [
     icon: ClipboardList,
     title: 'Resultados',
     lines: [
-      'Tocá cualquier partido para cargar el marcador.',
+      'Clic en cualquier partido para cargar el marcador.',
       'Con todos los grupos completos, los cruces de eliminatorias se llenan solos.',
     ],
     accent: 'from-rose-500/20 to-orange-600/10',
@@ -62,12 +62,12 @@ export function InfoView() {
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="space-y-4"
+      className="space-y-4 md:grid md:grid-cols-2 md:gap-4 md:space-y-0 lg:grid-cols-3"
     >
       <div
         className={cn(
           tw.glassStrong,
-          'relative overflow-hidden rounded-2xl p-5',
+          'relative overflow-hidden rounded-2xl p-5 md:col-span-2 lg:col-span-3',
         )}
       >
         <div
@@ -117,7 +117,7 @@ export function InfoView() {
         </motion.div>
       ))}
 
-      <div className={cn(tw.glass, 'rounded-2xl p-4')}>
+      <div className={cn(tw.glass, 'rounded-2xl p-4 md:col-span-2 lg:col-span-1')}>
         <div className="mb-2 flex items-center gap-2">
           <Trophy className="h-4 w-4 text-amber-300" />
           <span className="text-xs font-semibold text-white/70">Fuente</span>

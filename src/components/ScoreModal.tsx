@@ -116,7 +116,7 @@ export function ScoreModal({ match, onClose }: ScoreModalProps) {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 z-[100] flex items-end justify-center bg-black/60 backdrop-blur-sm"
+        className="fixed inset-0 z-[100] flex items-end justify-center bg-black/60 backdrop-blur-sm md:items-center md:p-6"
         onClick={onClose}
       >
         <motion.div
@@ -128,6 +128,7 @@ export function ScoreModal({ match, onClose }: ScoreModalProps) {
           className={cn(
             tw.glassStrong,
             'w-full max-w-[480px] rounded-t-3xl p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))]',
+            'md:max-w-md md:rounded-3xl md:pb-5 md:shadow-2xl md:shadow-black/50',
           )}
         >
           <div className="mb-4 flex items-center justify-between">
@@ -181,7 +182,7 @@ export function ScoreModal({ match, onClose }: ScoreModalProps) {
             <div className="mt-3 space-y-2">
               {confirmDelete && (
                 <p className="text-center text-[11px] text-rose-200/90">
-                  ¿Borrar este resultado? Tocá de nuevo para confirmar.
+                  ¿Borrar este resultado? Clic de nuevo para confirmar.
                 </p>
               )}
               <button
