@@ -1,8 +1,13 @@
 import { motion } from 'framer-motion'
+import { Clock } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { useApp } from '../context/AppProvider'
 import { getArgentinaSchedule } from '../lib/argentinaTime'
 import { BRACKET_ROUNDS } from '../lib/bracketLayout'
+import {
+  compactScheduleLabel,
+  formatBracketTeamName,
+} from '../lib/bracketDisplay'
 import { cn } from '../lib/cn'
 import { isArgentinaMatch } from '../lib/matchSchedule'
 import { tw } from '../lib/tw'
@@ -10,6 +15,55 @@ import type { ResolvedMatch } from '../types'
 import { STAGE_LABELS } from '../types'
 import { ScoreModal } from './ScoreModal'
 import { TeamFlag } from './TeamFlag'
+
+function BracketTeamRow({
+  name,
+  score,
+  hasResult,
+  isWinner,
+  isArgentinaTeam,
+}: {
+  name: string
+  score: number | null
+  hasResult: boolean
+  isWinner: boolean
+  isArgentinaTeam: boolean
+}) {
+  const label = formatBracketTeamName(name)
+
+  return (
+    <div
+      className={cn(
+        'flex items-center gap-2 px-3 py-2',
+        isWinner && 'bg-mint/[0.07]',
+        isArgentinaTeam && !isWinner && 'bg-sky-500/[0.06]',
+      )}
+    >
+      <TeamFlag name={name} size="sm" />
+      <span
+        className={cn(
+          'min-w-0 flex-1 truncate text-[11px] leading-snug',
+          isWinner
+            ? 'font-bold text-white'
+            : 'font-semibold text-white/90',
+        )}
+        title={name}
+      >
+        {label}
+      </span>
+      {hasResult && score != null && (
+        <span
+          className={cn(
+            'min-w-[1.25rem] text-right text-sm font-black tabular-nums',
+            isWinner ? 'text-mint' : 'text-white/45',
+          )}
+        >
+          {score}
+        </span>
+      )}
+    </div>
+  )
+}
 
 function BracketMatchNode({
   match,
@@ -19,9 +73,22 @@ function BracketMatchNode({
   onEdit: () => void
 }) {
   const schedule = getArgentinaSchedule(match)
+  const scheduleLabel = compactScheduleLabel(schedule)
   const isFinal = match.stage === 'final'
   const isThird = match.stage === 'third'
   const argentina = isArgentinaMatch(match.homeDisplay, match.awayDisplay)
+  const homeWon =
+    match.hasResult &&
+    match.homeScore != null &&
+    match.awayScore != null &&
+    match.homeScore > match.awayScore
+  const awayWon =
+    match.hasResult &&
+    match.homeScore != null &&
+    match.awayScore != null &&
+    match.awayScore > match.homeScore
+  const homeIsArgentina = /argentina/i.test(match.homeDisplay)
+  const awayIsArgentina = /argentina/i.test(match.awayDisplay)
 
   return (
     <button
@@ -29,61 +96,66 @@ function BracketMatchNode({
       onClick={onEdit}
       className={cn(
         tw.glass,
-        'relative w-[148px] shrink-0 rounded-xl p-2.5 text-left transition hover:bg-white/[0.08] active:scale-[0.98] md:w-[156px] lg:w-[168px]',
+        'group relative w-full shrink-0 overflow-hidden rounded-xl text-left transition',
+        'hover:bg-white/[0.08] active:scale-[0.98]',
         match.hasResult && 'ring-1 ring-mint/25',
-        isFinal && 'ring-1 ring-amber-400/30',
-        argentina && 'ring-1 ring-sky-400/25',
+        isFinal && 'ring-1 ring-amber-400/35',
+        isThird && 'ring-1 ring-white/10',
+        argentina && !match.hasResult && 'ring-1 ring-sky-400/30',
       )}
     >
-      {(isFinal || isThird) && (
-        <span
-          className={cn(
-            'mb-1.5 block text-center text-[8px] font-black uppercase tracking-wider',
-            isFinal ? 'text-amber-300' : 'text-white/45',
-          )}
-        >
-          {STAGE_LABELS[match.stage]}
-        </span>
+      {isFinal && (
+        <div
+          className="pointer-events-none absolute inset-0 bg-gradient-to-br from-amber-500/10 via-transparent to-transparent"
+          aria-hidden
+        />
       )}
 
-      <div className="space-y-1.5">
-        <div className="flex items-center gap-1.5">
-          <TeamFlag name={match.homeDisplay} size="sm" />
-          <span className="min-w-0 flex-1 truncate text-[10px] font-semibold leading-tight text-white/90">
-            {match.homeDisplay}
-          </span>
-          {match.hasResult && (
-            <span className="text-[11px] font-black tabular-nums text-mint">
-              {match.homeScore}
-            </span>
-          )}
-        </div>
-        <div className="flex items-center gap-1.5">
-          <TeamFlag name={match.awayDisplay} size="sm" />
-          <span className="min-w-0 flex-1 truncate text-[10px] font-semibold leading-tight text-white/90">
-            {match.awayDisplay}
-          </span>
-          {match.hasResult && (
-            <span className="text-[11px] font-black tabular-nums text-mint">
-              {match.awayScore}
-            </span>
-          )}
-        </div>
-      </div>
-
-      <div className="mt-2 flex items-center justify-between gap-1 border-t border-white/5 pt-1.5">
-        <span className="font-mono text-[8px] text-white/30">#{match.id}</span>
-        {match.hasResult ? (
-          <span className="text-[8px] font-bold uppercase text-mint/80">
-            Final
-          </span>
-        ) : schedule.timeDisplay ? (
-          <span className="text-[8px] font-semibold text-amber-200/80">
-            {schedule.timeDisplay}
+      <div className="relative flex items-center justify-between gap-2 border-b border-white/5 px-3 py-1.5">
+        {(isFinal || isThird) ? (
+          <span
+            className={cn(
+              'text-[9px] font-black uppercase tracking-wider',
+              isFinal ? 'text-amber-300' : 'text-white/45',
+            )}
+          >
+            {STAGE_LABELS[match.stage]}
           </span>
         ) : (
-          <span className="text-[8px] text-white/30">TBC</span>
+          <span className="font-mono text-[9px] font-medium text-white/35">
+            P{match.id}
+          </span>
         )}
+
+        {match.hasResult ? (
+          <span className="rounded-full bg-mint/15 px-1.5 py-px text-[9px] font-bold uppercase tracking-wide text-mint">
+            Final
+          </span>
+        ) : scheduleLabel ? (
+          <span className="flex items-center gap-1 text-[9px] font-semibold tabular-nums text-amber-200/90">
+            <Clock className="h-3 w-3 shrink-0 opacity-80" strokeWidth={2.5} />
+            {scheduleLabel}
+          </span>
+        ) : (
+          <span className="text-[9px] text-white/30">Horario TBC</span>
+        )}
+      </div>
+
+      <div className="divide-y divide-white/[0.06]">
+        <BracketTeamRow
+          name={match.homeDisplay}
+          score={match.homeScore}
+          hasResult={match.hasResult}
+          isWinner={homeWon}
+          isArgentinaTeam={homeIsArgentina}
+        />
+        <BracketTeamRow
+          name={match.awayDisplay}
+          score={match.awayScore}
+          hasResult={match.hasResult}
+          isWinner={awayWon}
+          isArgentinaTeam={awayIsArgentina}
+        />
       </div>
     </button>
   )
@@ -123,6 +195,7 @@ export function BracketView() {
             const roundMatches = round.matchIds
               .map((id) => byId.get(id))
               .filter((m): m is ResolvedMatch => m != null)
+            const isRound32 = round.stage === 'round32'
 
             return (
               <div key={round.stage} className="flex items-stretch">
@@ -133,7 +206,14 @@ export function BracketView() {
                   />
                 )}
 
-                <div className="flex w-[168px] shrink-0 flex-col md:w-[176px] lg:w-[188px]">
+                <div
+                  className={cn(
+                    'flex shrink-0 flex-col',
+                    isRound32
+                      ? 'w-[200px] md:w-[212px] lg:w-[224px]'
+                      : 'w-[188px] md:w-[200px] lg:w-[212px]',
+                  )}
+                >
                   <div className="sticky top-0 z-10 mb-3 rounded-lg bg-surface/80 px-2 py-1.5 text-center backdrop-blur-sm">
                     <p className="text-[10px] font-black uppercase tracking-wider text-mint/90">
                       {round.shortLabel}
@@ -141,7 +221,12 @@ export function BracketView() {
                     <p className="text-[8px] text-white/35">{round.label}</p>
                   </div>
 
-                  <div className="flex flex-1 flex-col justify-around gap-3 py-1">
+                  <div
+                    className={cn(
+                      'flex flex-1 flex-col justify-around py-1',
+                      isRound32 ? 'gap-2' : 'gap-3',
+                    )}
+                  >
                     {roundMatches.map((match, i) => (
                       <motion.div
                         key={match.id}
