@@ -1,13 +1,27 @@
 import { motion } from 'framer-motion'
-import { Clock } from 'lucide-react'
+import {
+  ArrowRight,
+  ChevronRight,
+  Clock,
+  MapPin,
+  Trophy,
+} from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { useApp } from '../context/AppProvider'
 import { getArgentinaSchedule } from '../lib/argentinaTime'
-import { BRACKET_ROUNDS } from '../lib/bracketLayout'
 import {
-  compactScheduleLabel,
-  formatBracketTeamName,
-} from '../lib/bracketDisplay'
+  BRACKET_ROUND_TABS,
+  getFeedsForRound,
+  nextRoundLabel,
+  QUARTER_FEEDS,
+  ROUND16_FEEDS,
+  ROUND32_FEEDS,
+  SEMI_FEEDS,
+  THIRD_PLACE_FROM,
+  type BracketFeed,
+  type BracketViewRound,
+} from '../lib/bracketLayout'
+import { formatBracketTeamName } from '../lib/bracketDisplay'
 import { cn } from '../lib/cn'
 import { isArgentinaMatch } from '../lib/matchSchedule'
 import { tw } from '../lib/tw'
@@ -16,64 +30,16 @@ import { STAGE_LABELS } from '../types'
 import { ScoreModal } from './ScoreModal'
 import { TeamFlag } from './TeamFlag'
 
-function BracketTeamRow({
-  name,
-  score,
-  hasResult,
-  isWinner,
-  isArgentinaTeam,
-}: {
-  name: string
-  score: number | null
-  hasResult: boolean
-  isWinner: boolean
-  isArgentinaTeam: boolean
-}) {
-  const label = formatBracketTeamName(name)
-
-  return (
-    <div
-      className={cn(
-        'flex items-center gap-2 px-3 py-2',
-        isWinner && 'bg-mint/[0.07]',
-        isArgentinaTeam && !isWinner && 'bg-sky-500/[0.06]',
-      )}
-    >
-      <TeamFlag name={name} size="sm" />
-      <span
-        className={cn(
-          'min-w-0 flex-1 truncate text-[11px] leading-snug',
-          isWinner
-            ? 'font-bold text-white'
-            : 'font-semibold text-white/90',
-        )}
-        title={name}
-      >
-        {label}
-      </span>
-      {hasResult && score != null && (
-        <span
-          className={cn(
-            'min-w-[1.25rem] text-right text-sm font-black tabular-nums',
-            isWinner ? 'text-mint' : 'text-white/45',
-          )}
-        >
-          {score}
-        </span>
-      )}
-    </div>
-  )
-}
-
-function BracketMatchNode({
+function BracketMatchCard({
   match,
   onEdit,
+  compact = false,
 }: {
   match: ResolvedMatch
   onEdit: () => void
+  compact?: boolean
 }) {
   const schedule = getArgentinaSchedule(match)
-  const scheduleLabel = compactScheduleLabel(schedule)
   const isFinal = match.stage === 'final'
   const isThird = match.stage === 'third'
   const argentina = isArgentinaMatch(match.homeDisplay, match.awayDisplay)
@@ -87,32 +53,26 @@ function BracketMatchNode({
     match.homeScore != null &&
     match.awayScore != null &&
     match.awayScore > match.homeScore
-  const homeIsArgentina = /argentina/i.test(match.homeDisplay)
-  const awayIsArgentina = /argentina/i.test(match.awayDisplay)
 
   return (
     <button
       type="button"
       onClick={onEdit}
       className={cn(
-        tw.glass,
-        'group relative w-full shrink-0 overflow-hidden rounded-xl text-left transition',
-        'hover:bg-white/[0.08] active:scale-[0.98]',
-        match.hasResult && 'ring-1 ring-mint/25',
-        isFinal && 'ring-1 ring-amber-400/35',
-        isThird && 'ring-1 ring-white/10',
-        argentina && !match.hasResult && 'ring-1 ring-sky-400/30',
+        'group w-full rounded-xl border text-left transition active:scale-[0.99]',
+        'border-white/[0.08] bg-white/[0.03] hover:border-mint/25 hover:bg-white/[0.06]',
+        match.hasResult && 'border-mint/30 bg-mint/[0.04]',
+        isFinal && 'border-amber-400/35 bg-gradient-to-br from-amber-500/10 to-transparent',
+        isThird && 'border-white/10',
+        argentina && !match.hasResult && 'ring-1 ring-sky-400/25',
+        compact ? 'p-2.5' : 'p-3',
       )}
     >
-      {isFinal && (
-        <div
-          className="pointer-events-none absolute inset-0 bg-gradient-to-br from-amber-500/10 via-transparent to-transparent"
-          aria-hidden
-        />
-      )}
-
-      <div className="relative flex items-center justify-between gap-2 border-b border-white/5 px-3 py-1.5">
-        {(isFinal || isThird) ? (
+      <div className="mb-2 flex items-center justify-between gap-2">
+        <span className="font-mono text-[9px] font-semibold text-white/35">
+          P{match.id}
+        </span>
+        {(isFinal || isThird) && (
           <span
             className={cn(
               'text-[9px] font-black uppercase tracking-wider',
@@ -121,49 +81,293 @@ function BracketMatchNode({
           >
             {STAGE_LABELS[match.stage]}
           </span>
-        ) : (
-          <span className="font-mono text-[9px] font-medium text-white/35">
-            P{match.id}
-          </span>
         )}
-
         {match.hasResult ? (
-          <span className="rounded-full bg-mint/15 px-1.5 py-px text-[9px] font-bold uppercase tracking-wide text-mint">
-            Final
+          <span className="rounded-full bg-mint/15 px-1.5 py-px text-[8px] font-bold uppercase text-mint">
+            FT
           </span>
-        ) : scheduleLabel ? (
-          <span className="flex items-center gap-1 text-[9px] font-semibold tabular-nums text-amber-200/90">
-            <Clock className="h-3 w-3 shrink-0 opacity-80" strokeWidth={2.5} />
-            {scheduleLabel}
+        ) : schedule.timeDisplay ? (
+          <span className="flex items-center gap-0.5 text-[9px] font-semibold tabular-nums text-amber-200/90">
+            <Clock className="h-3 w-3" strokeWidth={2.5} />
+            {schedule.timeDisplay}
           </span>
         ) : (
-          <span className="text-[9px] text-white/30">Horario TBC</span>
+          <span className="text-[9px] text-white/30">TBC</span>
         )}
       </div>
 
-      <div className="divide-y divide-white/[0.06]">
-        <BracketTeamRow
-          name={match.homeDisplay}
-          score={match.homeScore}
-          hasResult={match.hasResult}
-          isWinner={homeWon}
-          isArgentinaTeam={homeIsArgentina}
-        />
-        <BracketTeamRow
-          name={match.awayDisplay}
-          score={match.awayScore}
-          hasResult={match.hasResult}
-          isWinner={awayWon}
-          isArgentinaTeam={awayIsArgentina}
+      <div className="space-y-1">
+        {[{
+          name: match.homeDisplay,
+          score: match.homeScore,
+          won: homeWon,
+          isArgentina: /argentina/i.test(match.homeDisplay),
+        }, {
+          name: match.awayDisplay,
+          score: match.awayScore,
+          won: awayWon,
+          isArgentina: /argentina/i.test(match.awayDisplay),
+        }].map((row) => (
+          <div
+            key={row.name}
+            className={cn(
+              'flex items-center gap-2 rounded-lg px-1.5 py-1',
+              row.won && 'bg-mint/10',
+              row.isArgentina && !row.won && 'bg-sky-500/[0.06]',
+            )}
+          >
+            <TeamFlag name={row.name} size="sm" />
+            <span
+              className={cn(
+                'min-w-0 flex-1 truncate text-[11px]',
+                row.won ? 'font-bold text-white' : 'font-medium text-white/85',
+              )}
+              title={row.name}
+            >
+              {formatBracketTeamName(row.name)}
+            </span>
+            {match.hasResult && row.score != null && (
+              <span
+                className={cn(
+                  'min-w-[1rem] text-right text-sm font-black tabular-nums',
+                  row.won ? 'text-mint' : 'text-white/40',
+                )}
+              >
+                {row.score}
+              </span>
+            )}
+          </div>
+        ))}
+      </div>
+
+      {!compact && (
+        <p className="mt-2 flex items-center gap-1 truncate text-[9px] text-white/35">
+          <MapPin className="h-2.5 w-2.5 shrink-0 text-mint/60" />
+          {match.venue.replace(/^Estadio /, '')}
+        </p>
+      )}
+    </button>
+  )
+}
+
+function FeedGroup({
+  feed,
+  byId,
+  onEdit,
+  showConnector = true,
+}: {
+  feed: BracketFeed
+  byId: Map<number, ResolvedMatch>
+  onEdit: (m: ResolvedMatch) => void
+  showConnector?: boolean
+}) {
+  const [topId, bottomId] = feed.matchIds
+  const next = byId.get(feed.nextMatchId)
+  const top = byId.get(topId)
+  const bottom = byId.get(bottomId)
+  if (!top || !bottom || !next) return null
+
+  const destLabel = nextRoundLabel(feed.nextMatchId)
+
+  return (
+    <div className="grid min-w-0 grid-cols-1 gap-2 lg:grid-cols-[1fr_auto_1fr] lg:items-center lg:gap-3">
+      <div className="space-y-2">
+        <BracketMatchCard match={top} onEdit={() => onEdit(top)} compact />
+        <BracketMatchCard match={bottom} onEdit={() => onEdit(bottom)} compact />
+      </div>
+
+      {showConnector && (
+        <div className="hidden flex-col items-center gap-1 lg:flex">
+          <div className="h-px w-6 bg-gradient-to-r from-transparent via-white/20 to-white/20" />
+          <ArrowRight className="h-4 w-4 text-mint/50" />
+          <span className="whitespace-nowrap text-[8px] font-semibold uppercase tracking-wide text-white/35">
+            {destLabel}
+          </span>
+        </div>
+      )}
+
+      <div className="relative">
+        {!showConnector && (
+          <p className="mb-1.5 flex items-center gap-1 text-[9px] font-semibold text-mint/70">
+            <ChevronRight className="h-3 w-3" />
+            Clasifican a P{feed.nextMatchId}
+          </p>
+        )}
+        <BracketMatchCard
+          match={next}
+          onEdit={() => onEdit(next)}
+          compact={showConnector}
         />
       </div>
-    </button>
+    </div>
+  )
+}
+
+function FullBracketTree({
+  byId,
+  onEdit,
+}: {
+  byId: Map<number, ResolvedMatch>
+  onEdit: (m: ResolvedMatch) => void
+}) {
+  const final = byId.get(104)
+  const third = byId.get(103)
+
+  return (
+    <div className="space-y-8">
+      <section>
+        <RoundHeader
+          title="Dieciseisavos → Octavos"
+          subtitle="8 llaves · el ganador de cada par avanza"
+        />
+        <div className="grid gap-4 lg:grid-cols-2">
+          {ROUND32_FEEDS.map((feed) => (
+            <div
+              key={feed.nextMatchId}
+              className={cn(tw.glass, 'rounded-2xl p-3 lg:p-4')}
+            >
+              <FeedGroup feed={feed} byId={byId} onEdit={onEdit} />
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section>
+        <RoundHeader title="Octavos → Cuartos" subtitle="4 llaves" />
+        <div className="grid gap-4 lg:grid-cols-2">
+          {ROUND16_FEEDS.map((feed) => (
+            <div key={feed.nextMatchId} className={cn(tw.glass, 'rounded-2xl p-3 lg:p-4')}>
+              <FeedGroup feed={feed} byId={byId} onEdit={onEdit} />
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section>
+        <RoundHeader title="Cuartos → Semifinal" subtitle="2 llaves" />
+        <div className="grid gap-4 lg:grid-cols-2">
+          {QUARTER_FEEDS.map((feed) => (
+            <div key={feed.nextMatchId} className={cn(tw.glass, 'rounded-2xl p-3 lg:p-4')}>
+              <FeedGroup feed={feed} byId={byId} onEdit={onEdit} />
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section>
+        <RoundHeader title="Semifinal → Final" subtitle="Los perdedores juegan el 3er puesto" />
+        <div className="grid gap-4 lg:grid-cols-2">
+          {SEMI_FEEDS.map((feed) => (
+            <div key={feed.nextMatchId} className={cn(tw.glass, 'rounded-2xl p-3 lg:p-4')}>
+              <FeedGroup feed={feed} byId={byId} onEdit={onEdit} />
+            </div>
+          ))}
+        </div>
+
+        <div className="mt-4 grid gap-4 md:grid-cols-2">
+          {third && (
+            <div className={cn(tw.glass, 'rounded-2xl p-4')}>
+              <p className="mb-2 text-[10px] font-bold uppercase tracking-wider text-white/40">
+                Tercer puesto · P103
+              </p>
+              <BracketMatchCard match={third} onEdit={() => onEdit(third)} />
+            </div>
+          )}
+          {final && (
+            <div
+              className={cn(
+                tw.glass,
+                'rounded-2xl border border-amber-400/20 bg-gradient-to-br from-amber-500/10 via-transparent to-mint/5 p-4',
+              )}
+            >
+              <p className="mb-2 flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-amber-300">
+                <Trophy className="h-3.5 w-3.5" />
+                Final · P104
+              </p>
+              <BracketMatchCard match={final} onEdit={() => onEdit(final)} />
+            </div>
+          )}
+        </div>
+      </section>
+    </div>
+  )
+}
+
+function RoundHeader({ title, subtitle }: { title: string; subtitle: string }) {
+  return (
+    <div className="mb-3">
+      <h3 className="text-sm font-bold text-white">{title}</h3>
+      <p className="text-[10px] text-white/40">{subtitle}</p>
+    </div>
+  )
+}
+
+function SingleRoundView({
+  round,
+  byId,
+  onEdit,
+}: {
+  round: BracketViewRound
+  byId: Map<number, ResolvedMatch>
+  onEdit: (m: ResolvedMatch) => void
+}) {
+  if (round === 'third_final') {
+    const third = byId.get(103)
+    const final = byId.get(104)
+    return (
+      <div className="space-y-3">
+        {third && (
+          <div className={cn(tw.glass, 'rounded-2xl p-4')}>
+            <RoundHeader title="Tercer puesto" subtitle="Perdedores de semifinal" />
+            <BracketMatchCard match={third} onEdit={() => onEdit(third)} />
+          </div>
+        )}
+        {final && (
+          <div
+            className={cn(
+              tw.glass,
+              'rounded-2xl border border-amber-400/20 p-4',
+            )}
+          >
+            <RoundHeader title="Final" subtitle="Campeón del Mundial 2026" />
+            <BracketMatchCard match={final} onEdit={() => onEdit(final)} />
+          </div>
+        )}
+      </div>
+    )
+  }
+
+  const feeds = getFeedsForRound(round)
+
+  if (feeds.length === 0) return null
+
+  return (
+    <div className="space-y-3">
+      {feeds.map((feed) => (
+        <div key={feed.nextMatchId} className={cn(tw.glass, 'rounded-2xl p-3 md:p-4')}>
+          <FeedGroup feed={feed} byId={byId} onEdit={onEdit} showConnector={false} />
+        </div>
+      ))}
+
+      {round === 'semi' && byId.get(103) && (
+        <div className={cn(tw.glass, 'rounded-2xl p-3 md:p-4')}>
+          <p className="mb-2 text-[10px] font-semibold text-white/45">
+            Perdedores de P{THIRD_PLACE_FROM.matchIds[0]} y P{THIRD_PLACE_FROM.matchIds[1]} → P103
+          </p>
+          <BracketMatchCard
+            match={byId.get(103)!}
+            onEdit={() => onEdit(byId.get(103)!)}
+          />
+        </div>
+      )}
+    </div>
   )
 }
 
 export function BracketView() {
   const { resolvedMatches, groupComplete } = useApp()
   const [editing, setEditing] = useState<ResolvedMatch | null>(null)
+  const [activeRound, setActiveRound] = useState<BracketViewRound>('all')
 
   const byId = useMemo(
     () => new Map(resolvedMatches.map((m) => [m.id, m])),
@@ -173,80 +377,52 @@ export function BracketView() {
   return (
     <div className="space-y-4">
       {!groupComplete && (
-        <p className="rounded-xl bg-amber-500/10 px-3 py-2 text-center text-[11px] text-amber-200/90">
-          Completá los grupos para ver los equipos reales en el cuadro.
+        <p className="rounded-xl border border-amber-400/20 bg-amber-500/10 px-3 py-2.5 text-center text-[11px] leading-relaxed text-amber-100/90">
+          Completá los resultados de grupos para ver equipos reales en lugar de placeholders.
         </p>
       )}
-
-      <p className="text-center text-[10px] text-white/35 md:text-xs">
-        <span className="md:hidden">Deslizá horizontalmente · </span>
-        <span className="hidden md:inline">Clic en un partido para cargar resultado</span>
-        <span className="md:hidden">Tocá un partido para cargar resultado</span>
-      </p>
 
       <div
         className={cn(
           tw.scrollbarHide,
-          'overflow-x-auto pb-2 md:flex md:justify-center md:overflow-x-visible',
+          'flex gap-2 overflow-x-auto pb-1',
         )}
+        role="tablist"
+        aria-label="Ronda del cuadro"
       >
-        <div className="flex min-w-max items-stretch gap-0 px-1 md:min-w-0 md:gap-1">
-          {BRACKET_ROUNDS.map((round, roundIndex) => {
-            const roundMatches = round.matchIds
-              .map((id) => byId.get(id))
-              .filter((m): m is ResolvedMatch => m != null)
-            const isRound32 = round.stage === 'round32'
-
-            return (
-              <div key={round.stage} className="flex items-stretch">
-                {roundIndex > 0 && (
-                  <div
-                    className="mx-1 w-3 shrink-0 self-stretch bg-gradient-to-r from-white/5 via-white/10 to-white/5"
-                    aria-hidden
-                  />
-                )}
-
-                <div
-                  className={cn(
-                    'flex shrink-0 flex-col',
-                    isRound32
-                      ? 'w-[200px] md:w-[212px] lg:w-[224px]'
-                      : 'w-[188px] md:w-[200px] lg:w-[212px]',
-                  )}
-                >
-                  <div className="sticky top-0 z-10 mb-3 rounded-lg bg-surface/80 px-2 py-1.5 text-center backdrop-blur-sm">
-                    <p className="text-[10px] font-black uppercase tracking-wider text-mint/90">
-                      {round.shortLabel}
-                    </p>
-                    <p className="text-[8px] text-white/35">{round.label}</p>
-                  </div>
-
-                  <div
-                    className={cn(
-                      'flex flex-1 flex-col justify-around py-1',
-                      isRound32 ? 'gap-2' : 'gap-3',
-                    )}
-                  >
-                    {roundMatches.map((match, i) => (
-                      <motion.div
-                        key={match.id}
-                        initial={{ opacity: 0, x: 12 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: roundIndex * 0.05 + i * 0.02 }}
-                      >
-                        <BracketMatchNode
-                          match={match}
-                          onEdit={() => setEditing(match)}
-                        />
-                      </motion.div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            )
-          })}
-        </div>
+        {BRACKET_ROUND_TABS.map((tab) => (
+          <button
+            key={tab.id}
+            type="button"
+            role="tab"
+            aria-selected={activeRound === tab.id}
+            onClick={() => setActiveRound(tab.id)}
+            className={cn(
+              'shrink-0 rounded-full px-3.5 py-1.5 text-[11px] font-bold transition',
+              activeRound === tab.id ? tw.filterActive : tw.filterIdle,
+            )}
+          >
+            {tab.shortLabel}
+          </button>
+        ))}
       </div>
+
+      <p className="text-[10px] leading-relaxed text-white/35">
+        Cada llave muestra dos partidos y el cruce siguiente. Tocá cualquier partido para cargar el resultado.
+      </p>
+
+      <motion.div
+        key={activeRound}
+        initial={{ opacity: 0, y: 6 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.2 }}
+      >
+        {activeRound === 'all' ? (
+          <FullBracketTree byId={byId} onEdit={setEditing} />
+        ) : (
+          <SingleRoundView round={activeRound} byId={byId} onEdit={setEditing} />
+        )}
+      </motion.div>
 
       <ScoreModal match={editing} onClose={() => setEditing(null)} />
     </div>

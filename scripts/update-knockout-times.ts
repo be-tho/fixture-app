@@ -47,6 +47,9 @@ for (const m of knockout) {
       match_date: m.date,
       date_label: m.dateLabel,
       time_et: m.time,
+      home_label: m.home,
+      away_label: m.away,
+      venue: m.venue,
     })
     .eq('id', m.id)
 
